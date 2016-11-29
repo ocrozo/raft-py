@@ -11,8 +11,11 @@ import threading
 import time
 import xmlrpclib
 
+node_ids = ["134.214.202.220", "134.214.202.221", "134.214.202.222"]
+
 
 def get_election_timeout():
+    # Timeout between 0.5 and 5 seconds
     return random.randint(500, 5000) / 1000.0
 
 
@@ -75,7 +78,6 @@ class RaftNode(object):
 
     def read_ip(self):
         os.system("hostname -i | cut -f1 -d' ' > address")
-
         with open('address', 'r') as f:
             self.id = f.read().strip()
 
@@ -151,7 +153,9 @@ class RaftNode(object):
     def update_candidate(self):
         self.votes = 1
         self.set_voted_for(self.id)
-        for n in self.nodes:
+        for i in range(0, len(self.nodes)):
+
+            n = self.nodes[i]
             last_log_index = self.get_log_index()
             last_log_term = self.get_log_term()
 
@@ -167,11 +171,11 @@ class RaftNode(object):
                     self.votes += 1
 
             except httplib.HTTPException, e:
-                print e
+                print str(e) + " on node " + node_ids[i]
             except Exception, e:
-                print e
+                print str(e) + " on node " + node_ids[i]
 
-        if self.votes > math.ceil((len(self.nodes) + 1) / 2.0):
+        if self.votes >= (len(self.nodes)+1)/ 2.0:
             self.init_leader()
         else:
             self.init_follower(self.currentTerm)
@@ -210,9 +214,9 @@ class RaftNode(object):
                     self.nextIndex[i] -= 1
 
             except httplib.HTTPException, e:
-                print e
+                print str(e) + " on node " + node_ids[i]
             except Exception, e:
-                print e
+                print str(e) + " on node " + node_ids[i]
 
         self.leaderLock.release()
 
@@ -339,10 +343,8 @@ def main(argv):
     node = RaftNode()
 
     node.read_ip()
-    print "Id:"
-    print node.id
-
-    node_ids = ["134.214.202.220","134.214.202.221","134.214.202.222"]
+    print "Id: " + node.id
+    print "Timeout: " + str(node.electionTimeout)
     node_ids.remove(node.id)
     print node_ids
 
@@ -360,6 +362,7 @@ def main(argv):
     # server.serve_forever()
 
     t = threading.Thread(target=server.serve_forever)
+    t.daemon=True
     t.start()
 
     while node.running:

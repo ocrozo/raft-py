@@ -1,5 +1,6 @@
 import httplib
 import xmlrpclib
+import sys
 
 
 def get_leader(nodes):
@@ -11,8 +12,8 @@ def get_leader(nodes):
                 break
         except httplib.HTTPException:
             print ('HTTPException')
-        except Exception:
-            print ('Exception')
+        except Exception, e:
+            print 'Exception: ' + str(e)
     return leader
 
 
@@ -22,14 +23,16 @@ def add_entry(nodes, tid, data):
         try:
             leader = get_leader(nodes)
             if leader is not None:
-                committed = leader.addEntry(tid, data)
+                committed = leader.add_entry(tid, data)
         except httplib.HTTPException:
             print ('HTTPException')
-        except Exception:
-            print ('Exception')
+        except Exception, e:
+            print 'Exception: ' + str(e)
 
 
-def main():
+def main(argv):
+    value = str(argv)
+    print (value)
     tid = 0    # unique transaction id
     nodes = []
     node_ids = ["134.214.202.220","134.214.202.221","134.214.202.222"]
@@ -38,7 +41,7 @@ def main():
         node = xmlrpclib.Server("http://"+nodeId+":8000", allow_none=True)
         nodes.append(node)
 
-    add_entry(nodes, tid, "test")
+    add_entry(nodes, tid, value)
     # tid += 1
     # addEntry(nodes, tid, "abcd")
 
@@ -46,4 +49,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
